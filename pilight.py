@@ -23,8 +23,7 @@ def on_timer (state):
         t = time.time () - state['start']
         for c in ['c_red', 'c_green', 'c_blue']:
                 c = state[c]
-                state['pipe'].write ('{}={:.2f} '.format (c['channel'], c['anim'] (c['speed'] * t + c['offset'])))
-        state['pipe'].write ('\n')
+                state['pipe'].write ('{}={:.2f}\n'.format (c['channel'], c['anim'] (c['speed'] * t + c['offset'])))
         state['pipe'].flush ()
 
 
