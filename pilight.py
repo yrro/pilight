@@ -21,10 +21,9 @@ def on_timer (state):
         '''
         Called regularly to update colours.
         '''
-        t = time.time () - state['start']
         for c in ['c_red', 'c_green', 'c_blue']:
                 c = state[c]
-                state['pipe'].write ('{}={:.2f}\n'.format (c['channel'], c['anim'] (c['speed'] * t + c['offset'])))
+                state['pipe'].write ('{}={:.2f}\n'.format (c['channel'], c['anim'] (c['speed'] * time.time () + c['offset'])))
         state['pipe'].flush ()
 
 
@@ -68,9 +67,7 @@ def main ():
         a.add_argument ('--pipe', '-p', help='Pi-blaster pipe', default='/dev/pi-blaster')
         args = a.parse_args ()
 
-
         state = {}
-        state['start'] = time.time ()
         state['pipe'] = open (args.pipe, 'w')
         state['c_red'] = {'anim': anims.sine, 'speed': 1, 'offset': 0, 'channel': 2}
         state['c_green'] = {'anim': anims.sine, 'speed': 1, 'offset': 1/3, 'channel': 5}
