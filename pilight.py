@@ -4,13 +4,15 @@ import ctypes
 import errno
 import os
 import select
+import time
 import traceback
 
+import anims
 import ctimerfd
 import util
 
-def on_timer ():
-        pass
+def on_timer (state):
+        print anims.sine (time.time () - state['start'])
 
 def eintr_wrap (fn, *args, **kwargs):
         while True:
@@ -28,6 +30,9 @@ def wrap (fn, *args, **kwargs):
                 traceback.print_exc ()
 
 def main ():
+        state = {}
+        state['start'] = time.time ()
+
         spec = ctimerfd.itimerspec ()
         spec.it_interval.tv_sec = 0
         spec.it_interval.tv_nsec = long (1e9/30)
@@ -44,7 +49,7 @@ def main ():
                 for fd, event in eintr_wrap (epoll.poll):
                         if fd == t:
                                 os.read (t, 8)
-                                wrap (on_timer)
+                                wrap (on_timer, state)
 
 if __name__ == '__main__':
         main ()
