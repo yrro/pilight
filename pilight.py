@@ -27,7 +27,6 @@ def on_timer (state):
                 state['pipe'].write ('{}={:.2f}\n'.format (c['channel'], b))
         state['pipe'].flush ()
 
-
 def eintr_wrap (fn, *args, **kwargs):
         '''
         Wrapper for socket functions that handles EINTR.
