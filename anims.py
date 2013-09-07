@@ -11,3 +11,9 @@ def sine (t):
 
 def constant (t):
         return 1
+
+def third (t):
+        q, r = divmod (t, 1)
+        if r < 0.333:
+                return 1
+        return 0
