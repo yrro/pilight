@@ -17,7 +17,7 @@ def help (sock, args, state):
 @export
 def set (sock, args, state):
         if len (args) != 3:
-                eintr_wrap (sock.send, b'500 Usage: set {red|green|blue} {anim|speed|offset} VALUE\r\n')
+                eintr_wrap (sock.send, b'500 Usage: set {red|green|blue} {anim|speed|delay} VALUE\r\n')
                 return
 
         colour = 'c_{}'.format (args[0])
@@ -26,7 +26,7 @@ def set (sock, args, state):
                 return
         colour = state[colour]
 
-        if args[1] not in ['anim', 'speed', 'offset']:
+        if args[1] not in ['anim', 'speed', 'delay']:
                 eintr_wrap (sock.send, b'500 Bad variable\r\n')
                 return
         variable = args[1]
