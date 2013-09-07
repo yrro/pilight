@@ -8,4 +8,4 @@ def saw (t):
                 return 1-2*(r-0.5)
 
 def sine (t):
-        return (1 + math.sin (t))/2
+        return (1 + math.sin (t * 2 * math.pi))/2

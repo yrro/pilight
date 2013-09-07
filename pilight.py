@@ -6,7 +6,6 @@ import argparse
 import collections
 import ctypes
 import errno
-import math
 import os
 import select
 import socket
@@ -73,9 +72,9 @@ def main ():
         state = {}
         state['start'] = time.time ()
         state['pipe'] = open (args.pipe, 'w')
-        state['c_red'] = {'anim': anims.sine, 'speed': 2*math.pi, 'offset': 0, 'channel': 2}
-        state['c_green'] = {'anim': anims.sine, 'speed': 2*math.pi, 'offset': 1/3 * math.pi, 'channel': 5}
-        state['c_blue'] = {'anim': anims.sine, 'speed': 2*math.pi, 'offset': 2/3 * math.pi, 'channel': 6}
+        state['c_red'] = {'anim': anims.sine, 'speed': 1, 'offset': 0, 'channel': 2}
+        state['c_green'] = {'anim': anims.sine, 'speed': 1, 'offset': 1/3, 'channel': 5}
+        state['c_blue'] = {'anim': anims.sine, 'speed': 1, 'offset': 2/3, 'channel': 6}
 
         # Maps file descriptors to netstate instances
         connections = {}
