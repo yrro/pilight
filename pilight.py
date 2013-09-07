@@ -1,7 +1,9 @@
 #!/usr/bin/python
 
+import collections
 import ctypes
 import errno
+import math
 import os
 import select
 import time
@@ -12,7 +14,10 @@ import ctimerfd
 import util
 
 def on_timer (state):
-        print anims.sine (time.time () - state['start'])
+        t = time.time () - state['start']
+        for c in ['red', 'green', 'blue']:
+                print state[c].anim (state[c].speed * t + state[c].offset),
+        print
 
 def eintr_wrap (fn, *args, **kwargs):
         while True:
@@ -29,9 +34,14 @@ def wrap (fn, *args, **kwargs):
         except:
                 traceback.print_exc ()
 
+animstate = collections.namedtuple ('animstate', ('anim', 'speed', 'offset'))
+
 def main ():
         state = {}
         state['start'] = time.time ()
+        state['red'] = animstate (anims.sine, 2*math.pi, 0)
+        state['green'] = animstate (anims.sine, 2*math.pi, 1/3 * math.pi)
+        state['blue'] = animstate (anims.sine, 2*math.pi, 2/3 * math.pi)
 
         spec = ctimerfd.itimerspec ()
         spec.it_interval.tv_sec = 0
