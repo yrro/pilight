@@ -16,7 +16,7 @@ import util
 def on_timer (state):
         t = time.time () - state['start']
         for c in ['red', 'green', 'blue']:
-                print state[c].anim (state[c].speed * t + state[c].offset),
+                print '{:.2f}'.format (state[c].anim (state[c].speed * t + state[c].offset)),
         print
 
 def eintr_wrap (fn, *args, **kwargs):
