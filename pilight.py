@@ -19,8 +19,9 @@ def on_timer (state):
         Called regularly to update colours.
         '''
         t = time.time () - state['start']
-        for c in ['red', 'green', 'blue']:
-                print '{:.2f}'.format (state[c].anim (state[c].speed * t + state[c].offset)),
+        for c in ['c_red', 'c_green', 'c_blue']:
+                c = state[c]
+                print '{:.2f}'.format (c['anim'] (c['speed'] * t + c['offset'])),
         print
 
 def eintr_wrap (fn, *args, **kwargs):
@@ -35,6 +36,18 @@ def eintr_wrap (fn, *args, **kwargs):
                                 continue
                         raise
 
+def eagain_wrap (fn, *args, **kwargs):
+        '''
+        Wrapper for socket functions that converts an EAGAIN socket.error into
+        a result of None.
+        '''
+        try:
+                return fn (*args, **kwargs)
+        except socket.error as e:
+                if e.errno == errno.EAGAIN:
+                        return None
+                raise
+
 def wrap (fn, *args, **kwargs):
         '''
         Wrapper that logs & eats exceptions.
@@ -44,25 +57,53 @@ def wrap (fn, *args, **kwargs):
         except:
                 traceback.print_exc ()
 
-animstate = collections.namedtuple ('animstate', ('anim', 'speed', 'offset'))
 netstate = collections.namedtuple ('netstate', ('socket', 'buf'))
 
-def cmd_test_ok ():
-        pass
-def cmd_test_err ():
-        raise Exception ('should fail')
+def cmd_help (sock, args, state):
+        eintr_wrap (sock.send, b'200 Known commands:\r\n200 {}\r\n'.format (' '.join (commands.keys ())))
+
+def cmd_set (sock, args, state):
+        if len (args) != 3:
+                eintr_wrap (sock.send, b'500 Usage: set {red|green|blue} {anim|speed|offset} VALUE\r\n')
+                return
+
+        colour = 'c_{}'.format (args[0])
+        if colour not in state:
+                eintr_wrap (sock.send, b'500 Bad colour\r\n')
+                return
+        colour = state[colour]
+
+        if args[1] not in ['anim', 'speed', 'offset']:
+                eintr_wrap (sock.send, b'500 Bad variable\r\n')
+                return
+        variable = args[1]
+
+        if variable == 'anim':
+                value = getattr (anims, args[2], None)
+                if value is None:
+                        eintr_wrap (socket.send, b'500 Bad animation\r\n')
+                        return
+        elif variable in ['anim', 'speed']:
+                try:
+                        value = float (args[2])
+                except ValueError:
+                        eintr_wrap (sock.send, b'500 Bad value\r\n')
+                        return
+
+        colour[variable] = value
+        eintr_wrap (sock.send, b'200 Ok\r\n')
 
 commands = {
-        b'test_ok': cmd_test_ok,
-        b'test_err': cmd_test_err
+        b'help': cmd_help,
+        b'set': cmd_set,
 }
 
 def main ():
         state = {}
         state['start'] = time.time ()
-        state['red'] = animstate (anims.sine, 2*math.pi, 0)
-        state['green'] = animstate (anims.sine, 2*math.pi, 1/3 * math.pi)
-        state['blue'] = animstate (anims.sine, 2*math.pi, 2/3 * math.pi)
+        state['c_red'] = {'anim': anims.sine, 'speed': 2*math.pi, 'offset': 0}
+        state['c_green'] = {'anim': anims.sine, 'speed': 2*math.pi, 'offset': 1/3 * math.pi}
+        state['c_blue'] = {'anim': anims.sine, 'speed': 2*math.pi, 'offset': 2/3 * math.pi}
 
         # Maps file descriptors to netstate instances
         connections = {}
@@ -102,37 +143,36 @@ def main ():
                         # connection socket
                         elif fd in connections and event & select.POLLIN:
                                 ns = connections[fd]
-                                try:
-                                        while True:
-                                                x = eintr_wrap (ns.socket.recv, 4096)
-                                                if len (x) == 0:
-                                                        print 'Connection closed (fd={})'.format (ns.socket.fileno ())
-                                                        del connections [ns.socket.fileno ()]
-                                                        epoll.unregister (ns.socket.fileno ())
-                                                        ns.socket.close ()
-                                                        break
-                                                ns.buf.extend (x)
-                                except socket.error as e:
-                                        if e.errno != errno.EAGAIN:
-                                                raise
+                                while True:
+                                        x = eagain_wrap (eintr_wrap, ns.socket.recv, 4096)
+                                        if x is None:
+                                                break
+                                        if len (x) == 0:
+                                                print 'Connection closed (fd={})'.format (ns.socket.fileno ())
+                                                del connections [ns.socket.fileno ()]
+                                                epoll.unregister (ns.socket.fileno ())
+                                                ns.socket.close ()
+                                                break
+                                        ns.buf.extend (x)
                                 while True:
                                         try:
                                                 i = ns.buf.index ('\r\n')
                                         except ValueError:
                                                 break
-                                        args = ns.buf[:i].split ()
-                                        fn = commands.get (bytes (args[0]), None)
+                                        args = [bytes (x) for x in ns.buf[:i].split ()]
+                                        del ns.buf[:i+2]
+
+                                        fn = commands.get (args[0], None)
                                         if fn is None:
                                                 eintr_wrap (ns.socket.send, b'500 Unknown command {}\r\n'.format (args[0]))
-                                        else:
-                                                try:
-                                                        fn ()
-                                                except Exception as e:
-                                                        eintr_wrap (ns.socket.send, b'500 {}\r\n'.format (e))
-                                                        traceback.print_exc ()
-                                                else:
-                                                        eintr_wrap (ns.socket.send, b'200 Ok\r\n')
-                                        del ns.buf[:i+2]
+                                                continue
+
+                                        try:
+                                                fn (ns.socket, args[1:], state)
+                                        except Exception as e:
+                                                eintr_wrap (ns.socket.send, b'500 {}\r\n'.format (e))
+                                                traceback.print_exc ()
+                        # anything else is unexpected
                         else:
                                 msg = 'Bad event (fd={} event={})'.format (fd, event)
                                 raise Exception (msg)
