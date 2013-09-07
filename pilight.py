@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import argparse
 import collections
 import ctypes
 import errno
@@ -22,8 +23,10 @@ def on_timer (state):
         t = time.time () - state['start']
         for c in ['c_red', 'c_green', 'c_blue']:
                 c = state[c]
-                print '{:.2f}'.format (c['anim'] (c['speed'] * t + c['offset'])),
-        print
+                state['pipe'].write ('{}={:.2f} '.format (c['channel'], c['anim'] (c['speed'] * t + c['offset'])))
+        state['pipe'].write ('\n')
+        state['pipe'].flush ()
+
 
 def eintr_wrap (fn, *args, **kwargs):
         '''
@@ -61,11 +64,17 @@ def wrap (fn, *args, **kwargs):
 netstate = collections.namedtuple ('netstate', ('socket', 'buf'))
 
 def main ():
+        a = argparse.ArgumentParser (description='Rasberry Pi LED flashing thingy')
+        a.add_argument ('--pipe', '-p', help='Pi-blaster pipe', default='/dev/pi-blaster')
+        args = a.parse_args ()
+
+
         state = {}
         state['start'] = time.time ()
-        state['c_red'] = {'anim': anims.sine, 'speed': 2*math.pi, 'offset': 0}
-        state['c_green'] = {'anim': anims.sine, 'speed': 2*math.pi, 'offset': 1/3 * math.pi}
-        state['c_blue'] = {'anim': anims.sine, 'speed': 2*math.pi, 'offset': 2/3 * math.pi}
+        state['pipe'] = open (args.pipe, 'w')
+        state['c_red'] = {'anim': anims.sine, 'speed': 2*math.pi, 'offset': 0, 'channel': 2}
+        state['c_green'] = {'anim': anims.sine, 'speed': 2*math.pi, 'offset': 1/3 * math.pi, 'channel': 5}
+        state['c_blue'] = {'anim': anims.sine, 'speed': 2*math.pi, 'offset': 2/3 * math.pi, 'channel': 6}
 
         # Maps file descriptors to netstate instances
         connections = {}
