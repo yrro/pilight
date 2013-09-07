@@ -17,7 +17,7 @@ def help (sock, args, state):
 @export
 def set (sock, args, state):
         if len (args) != 3:
-                eintr_wrap (sock.send, b'500 Usage: set {red|green|blue} {anim|speed|delay} VALUE\r\n')
+                eintr_wrap (sock.send, b'500 Usage: set {red|green|blue} {anim|speed|delay|brightness} VALUE\r\n')
                 return
 
         colour = 'c_{}'.format (args[0])
@@ -26,7 +26,7 @@ def set (sock, args, state):
                 return
         colour = state[colour]
 
-        if args[1] not in ['anim', 'speed', 'delay']:
+        if args[1] not in ['anim', 'speed', 'delay', 'brightness']:
                 eintr_wrap (sock.send, b'500 Bad variable\r\n')
                 return
         variable = args[1]
@@ -36,7 +36,7 @@ def set (sock, args, state):
                 if value is None:
                         eintr_wrap (socket.send, b'500 Bad animation\r\n')
                         return
-        elif variable in ['anim', 'speed']:
+        elif variable in ['anim', 'speed', 'brightness']:
                 try:
                         value = float (args[2])
                 except ValueError:

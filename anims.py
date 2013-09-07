@@ -9,3 +9,6 @@ def saw (t):
 
 def sine (t):
         return (1 + math.sin (t * 2 * math.pi))/2
+
+def constant (t):
+        return 1

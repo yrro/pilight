@@ -23,7 +23,8 @@ def on_timer (state):
         '''
         for c in ['c_red', 'c_green', 'c_blue']:
                 c = state[c]
-                state['pipe'].write ('{}={:.2f}\n'.format (c['channel'], c['anim'] (c['speed'] * time.time () + c['delay'])))
+                b = c['anim'] (c['speed'] * time.time () + c['delay']) * c['brightness']
+                state['pipe'].write ('{}={:.2f}\n'.format (c['channel'], b))
         state['pipe'].flush ()
 
 
@@ -69,9 +70,9 @@ def main ():
 
         state = {}
         state['pipe'] = open (args.pipe, 'w')
-        state['c_red'] = {'anim': anims.sine, 'speed': 1, 'delay': 0, 'channel': 2}
-        state['c_green'] = {'anim': anims.sine, 'speed': 1, 'delay': 1/3, 'channel': 5}
-        state['c_blue'] = {'anim': anims.sine, 'speed': 1, 'delay': 2/3, 'channel': 6}
+        state['c_red'] =   {'anim': anims.sine, 'speed': 1, 'delay': 0,   'brightness': 1, 'channel': 2}
+        state['c_green'] = {'anim': anims.sine, 'speed': 1, 'delay': 1/3, 'brightness': 1,'channel': 5}
+        state['c_blue'] =  {'anim': anims.sine, 'speed': 1, 'delay': 2/3, 'brightness': 1, 'channel': 6}
 
         # Maps file descriptors to netstate instances
         connections = {}
