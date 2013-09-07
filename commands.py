@@ -1,3 +1,4 @@
+import anims
 from pilight import eintr_wrap
 
 commands = {}
