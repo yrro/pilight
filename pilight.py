@@ -6,8 +6,8 @@ import os
 import select
 import traceback
 
-import cepoll
 import ctimerfd
+import util
 
 def on_timer ():
         pass
@@ -36,7 +36,8 @@ def main ():
         t = ctimerfd.timerfd_create (ctimerfd.CLOCK_MONOTONIC, ctimerfd.TFD_CLOEXEC|ctimerfd.TFD_NONBLOCK)
         ctimerfd.timerfd_settime (t, 0, ctypes.pointer (spec), None)
 
-        epoll = select.epoll.fromfd (cepoll.epoll_create (cepoll.EPOLL_CLOEXEC))
+        epoll = select.epoll ()
+        util.set_cloexec (epoll.fileno ()) # XXX As of Python 2.3, flags=EPOLL_CLOEXEC can be used when creating the epoll instead
         epoll.register (t, select.EPOLLIN)
 
         while True:
