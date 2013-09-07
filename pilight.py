@@ -30,7 +30,7 @@ def wrap (fn, *args, **kwargs):
 def main ():
         spec = ctimerfd.itimerspec ()
         spec.it_interval.tv_sec = 0
-        spec.it_interval.tv_nsec = long (1e9/60)
+        spec.it_interval.tv_nsec = long (1e9/30)
         spec.it_value.tv_sec = 0
         spec.it_value.tv_nsec = 1
         t = ctimerfd.timerfd_create (ctimerfd.CLOCK_MONOTONIC, ctimerfd.TFD_CLOEXEC|ctimerfd.TFD_NONBLOCK)
