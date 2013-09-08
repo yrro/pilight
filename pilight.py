@@ -34,7 +34,10 @@ def eintr_wrap (fn, *args, **kwargs):
         while True:
                 try:
                         return fn (*args, **kwargs)
-                except socket.error as e:
+                except IOError as e:
+                        # Don't catch socket.error, because other functions
+                        # (e.g., epoll_wait) don't throw it, they throw the
+                        # more general IOError instead.
                         if e.errno == errno.EINTR:
                                 continue
                         raise
